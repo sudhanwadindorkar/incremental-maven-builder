@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.sudhanwadindorkar</groupId>
 	<artifactId>incremental-maven-builder</artifactId>
-	<version>0.0.1-SNAPSHOT</version>
+	<version>1.0</version>
 	<name>Maven Incremental Build Extension</name>
 
 	<properties>
