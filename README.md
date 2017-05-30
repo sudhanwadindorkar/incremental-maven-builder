@@ -52,6 +52,9 @@ The incremental builder determines the list of changed projects by comparing the
 
 If at least one source artifact is found such that it's last modified timestamp is after the last modified timestamp of the module artifact installed in the local Maven repository, the the module is added to the list of projects to be built.
 
+## Issues?
+
+Are you facing any issues running this extension? Would you like some improvements? Please report an issue at https://github.com/sudhanwadindorkar/incremental-maven-builder/issues. Do include the command output with debug logs enabled via the -X flag.
 
 ## Next Steps
 
