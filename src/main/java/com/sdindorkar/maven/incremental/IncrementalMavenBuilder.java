@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -29,6 +30,10 @@ import org.slf4j.LoggerFactory;
 @Singleton
 @Named("incremental")
 public class IncrementalMavenBuilder implements Builder {
+
+	private static final String PRINT_DETAILED_REACTOR_FLAG = "incremental.reactor.detailed";
+
+	private static final String SIMULATE_BUILD_FLAG = "incremental.simulate";
 
 	private static final String SECTION_SEPARATOR = " -----------------------------------------------------------------------";
 
@@ -57,8 +62,11 @@ public class IncrementalMavenBuilder implements Builder {
 	public void build(MavenSession session, ReactorContext reactorContext, ProjectBuildList projectBuilds,
 			List<TaskSegment> taskSegments, ReactorBuildStatus reactorBuildStatus)
 			throws ExecutionException, InterruptedException {
-		boolean simulate = Boolean.valueOf(session.getRequest().getUserProperties().getProperty("simulate"));
-		LOGGER.debug("Simulate flag value: {}.", simulate);
+		boolean simulate = Boolean.valueOf(session.getRequest().getUserProperties().getProperty(SIMULATE_BUILD_FLAG));
+		LOGGER.debug("{} = {}.", SIMULATE_BUILD_FLAG, simulate);
+		boolean printDetailedReactor = Boolean
+				.valueOf(session.getRequest().getUserProperties().getProperty(PRINT_DETAILED_REACTOR_FLAG));
+		LOGGER.debug("{} = {}.", PRINT_DETAILED_REACTOR_FLAG, printDetailedReactor);
 		LOGGER.debug("Processing projects in build to determine changed projects.");
 		List<MavenProject> changedProjects = getChangedProjects(session);
 		List<MavenProject> downStreamProjects = getDownStreamProjects(session, changedProjects);
@@ -73,15 +81,23 @@ public class IncrementalMavenBuilder implements Builder {
 				projectsSkipped.add(project);
 			}
 		}
-		LOGGER.info("Skipped projects:");
-		for (MavenProject project : projectsSkipped) {
-			LOGGER.info(" {}", project.getName());
+		if (printDetailedReactor) {
+			LOGGER.info("Changed projects:");
+			printProjectList(changedProjects.stream());
+			LOGGER.info("Downstream projects:");
+			printProjectList(downStreamProjects.stream()
+					.filter(downStreamProject -> !changedProjects.contains(downStreamProject)));
+			LOGGER.info("Skipped projects:");
+			printProjectList(projectsSkipped.stream());
 		}
 		LOGGER.info("Recalculated reactor:");
-		for (MavenProject project : projectsToBuild) {
-			LOGGER.info(" {}", project.getName());
-		}
+		printProjectList(projectsToBuild.stream());
 		build(session, reactorContext, projectBuilds, projectsToBuild, taskSegments, simulate);
+	}
+
+	private void printProjectList(Stream<MavenProject> projects) {
+		projects.forEach(project -> LOGGER.info(" {} ({})", project.getName(), project.getArtifactId()));
+		LOGGER.info("\n");
 	}
 
 	private List<MavenProject> getDownStreamProjects(MavenSession session, List<MavenProject> changedProjects) {
@@ -141,6 +157,10 @@ public class IncrementalMavenBuilder implements Builder {
 		Path artifactPath = Paths.get(session.getLocalRepository().getBasedir(),
 				session.getLocalRepository().pathOf(project.getArtifact()));
 		LOGGER.debug("Project artifact path is {}", artifactPath);
+		if (!artifactPath.toFile().exists()) {
+			LOGGER.debug("Build required as project artifact does not exist.");
+			return true;
+		}
 		long lastBuildTime = artifactPath.toFile().lastModified();
 		LOGGER.debug("Project artifact last modified time is {}", lastBuildTime);
 		for (String sourceDir : sourceDirectories) {

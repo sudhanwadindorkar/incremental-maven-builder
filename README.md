@@ -26,14 +26,16 @@ In order to use this extension in a Maven project, Create a .mvn folder in your 
 Replace the "xxx" in the version tag with the version from this project's pom.xml.
 
 ## Usage
-	mvn -b incremental -Dsimulate=true|false
-Invoke the incremental builder using the `mvn -b incremental` switch. It will print the list of changed projects that will be built and also the projects that were skipped. It will then build the changed projects. The simulate flag, if set to true, does not run the actual build. The value of the simulate flag is false by default.
+	mvn -b incremental -Dincremental.simulate=true|false -Dincremental.reactor.detailed=true|false 
+Invoke the incremental builder using the `mvn -b incremental` switch. It will print the list of changed projects that will be built and also the projects that were skipped. It will then build the changed projects. The "incremental.simulate" flag, if set to true, does not run the actual build. The value of the flag is false by default. The "incremental.reactor.detailed" flag, if set to true, prints a detailed reactor include the list of changed projects, dependent projects & skipped projects. The value of the flag is false by default.
 
 The following are some examples:
 
 `mvn -b incremental clean install` -  Runs clean install on the changed projects.
 
-`mvn -b incremental -Dsimulate=true clean install` -  Just determines the changed projects, prints the list of the changed projects & skipped projects.
+`mvn -b incremental -Dincremental.simulate clean install` -  Just determines the changed projects, prints the list of the changed projects & skipped projects.
+
+`mvn -b incremental -Dincremental.reactor.detailed clean install` -  Runs clean install on the changed projects while printing a detailed reactor.
 
 `mvn -b incremental -X clean install` -  Runs clean install on the changed projects while printing debug level information.
 
