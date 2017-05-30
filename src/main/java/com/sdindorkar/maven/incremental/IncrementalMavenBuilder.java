@@ -141,6 +141,9 @@ public class IncrementalMavenBuilder implements Builder {
 				if (!simulate) {
 					LOGGER.info("Building project: {}", mavenProject.getId());
 					lifecycleModuleBuilder.buildProject(mavenSession, reactorContext, mavenProject, taskSegment);
+					if (reactorContext.getReactorBuildStatus().isHalted()) {
+						break;
+					}
 				}
 			}
 		}
