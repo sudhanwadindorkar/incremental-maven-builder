@@ -5,83 +5,64 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.lifecycle.internal.LifecycleModuleBuilder;
+import org.apache.maven.graph.DefaultProjectDependencyGraph;
 import org.apache.maven.lifecycle.internal.ProjectBuildList;
-import org.apache.maven.lifecycle.internal.ReactorBuildStatus;
-import org.apache.maven.lifecycle.internal.ReactorContext;
-import org.apache.maven.lifecycle.internal.TaskSegment;
-import org.apache.maven.lifecycle.internal.builder.Builder;
+import org.apache.maven.lifecycle.internal.ProjectSegment;
 import org.apache.maven.project.MavenProject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@Singleton
-@Named("incremental")
-public class IncrementalMavenBuilder implements Builder {
+public class ChangedModulesCalculator {
 
-	private static final String PRINT_DETAILED_REACTOR_FLAG = "incremental.reactor.detailed";
+	private static final Logger LOGGER = LoggerFactory.getLogger(ChangedModulesCalculator.class);
 
-	private static final String SIMULATE_BUILD_FLAG = "incremental.simulate";
+	private List<MavenProject> changedProjects;
+	private List<MavenProject> downStreamProjects;
+	private List<MavenProject> projectsToBuild;
+	private List<MavenProject> projectsSkipped;
+	private List<ProjectSegment> changedProjectSegments;
 
-	private static final String SECTION_SEPARATOR = " -----------------------------------------------------------------------";
-
-	private final Logger LOGGER = LoggerFactory.getLogger(getClass());
-
-	private final LifecycleModuleBuilder lifecycleModuleBuilder;
-
-	@Inject
-	public IncrementalMavenBuilder(LifecycleModuleBuilder lifecycleModuleBuilder) {
-		LOGGER.info(SECTION_SEPARATOR);
-		LOGGER.info("Incremental Maven Builder");
-		LOGGER.info(SECTION_SEPARATOR);
-		this.lifecycleModuleBuilder = lifecycleModuleBuilder;
-	}
-
-	/**
-	 * 
-	 * 
-	 * @see org.apache.maven.lifecycle.internal.builder.Builder#build(org.apache.
-	 *      maven.execution.MavenSession,
-	 *      org.apache.maven.lifecycle.internal.ReactorContext,
-	 *      org.apache.maven.lifecycle.internal.ProjectBuildList,
-	 *      java.util.List,
-	 *      org.apache.maven.lifecycle.internal.ReactorBuildStatus)
-	 */
-	public void build(MavenSession session, ReactorContext reactorContext, ProjectBuildList projectBuilds,
-			List<TaskSegment> taskSegments, ReactorBuildStatus reactorBuildStatus)
-			throws ExecutionException, InterruptedException {
-		boolean simulate = Boolean.valueOf(session.getRequest().getUserProperties().getProperty(SIMULATE_BUILD_FLAG));
-		LOGGER.debug("{} = {}.", SIMULATE_BUILD_FLAG, simulate);
-		boolean printDetailedReactor = Boolean
-				.valueOf(session.getRequest().getUserProperties().getProperty(PRINT_DETAILED_REACTOR_FLAG));
-		LOGGER.debug("{} = {}.", PRINT_DETAILED_REACTOR_FLAG, printDetailedReactor);
+	public ChangedModulesCalculator(MavenSession session, ProjectBuildList originalProjectBuildList) {
 		LOGGER.debug("Processing projects in build to determine changed projects.");
-		List<MavenProject> changedProjects = getChangedProjects(session);
-		List<MavenProject> downStreamProjects = getDownStreamProjects(session, changedProjects);
-		List<MavenProject> projectsToBuild = new ArrayList<>();
-		List<MavenProject> projectsSkipped = new ArrayList<>();
+		changedProjects = calculateChangedProjects(session);
+		downStreamProjects = getDownStreamProjects(session, changedProjects);
+		projectsToBuild = new ArrayList<>();
+		projectsSkipped = new ArrayList<>();
 		LOGGER.debug("Building final list of changed projects.");
+		changedProjectSegments = new ArrayList<>();
+		ProjectSegment projectSegment;
 		for (MavenProject project : session.getProjectDependencyGraph().getSortedProjects()) {
 			if (changedProjects.contains(project) || downStreamProjects.contains(project)) {
 				LOGGER.debug("Adding project {} to build queue.", project);
 				projectsToBuild.add(project);
+				projectSegment = originalProjectBuildList.findByMavenProject(project);
+				if (projectSegment != null) {
+					changedProjectSegments.add(projectSegment);
+				}
 			} else {
 				projectsSkipped.add(project);
 			}
 		}
-		if (printDetailedReactor) {
+	}
+
+	public void updateMavenSession(MavenSession session) throws Exception {
+		session.setProjects(projectsToBuild);
+		session.setProjectDependencyGraph(new DefaultProjectDependencyGraph(session.getAllProjects(), projectsToBuild));
+	}
+
+	public ProjectBuildList getChangedProjectBuildList() {
+		return new ProjectBuildList(changedProjectSegments);
+	}
+
+	public void printReactor(BuilderOptions builderOptions) {
+		if (builderOptions.isPrintDetailedReactor()) {
 			LOGGER.info("Changed projects:");
 			printProjectList(changedProjects.stream());
 			LOGGER.info("Downstream projects:");
@@ -92,7 +73,6 @@ public class IncrementalMavenBuilder implements Builder {
 		}
 		LOGGER.info("Recalculated reactor:");
 		printProjectList(projectsToBuild.stream());
-		build(session, reactorContext, projectBuilds, projectsToBuild, taskSegments, simulate);
 	}
 
 	private void printProjectList(Stream<MavenProject> projects) {
@@ -113,10 +93,10 @@ public class IncrementalMavenBuilder implements Builder {
 		return downStreamProjects;
 	}
 
-	private List<MavenProject> getChangedProjects(MavenSession session) {
+	private List<MavenProject> calculateChangedProjects(MavenSession session) {
 		List<MavenProject> projectsToBuild = new ArrayList<>();
 		for (MavenProject project : session.getProjects()) {
-			LOGGER.debug(SECTION_SEPARATOR);
+			LOGGER.debug(Constants.SECTION_SEPARATOR);
 			LOGGER.debug("Processing project: {}", project.getId());
 			if (isBuildRequired(project, session)) {
 				LOGGER.debug("Adding project {} to build queue.", project.getId());
@@ -124,29 +104,6 @@ public class IncrementalMavenBuilder implements Builder {
 			}
 		}
 		return projectsToBuild;
-	}
-
-	private void build(MavenSession mavenSession, ReactorContext reactorContext, ProjectBuildList projectBuilds,
-			List<MavenProject> projects, List<TaskSegment> taskSegments, boolean simulate)
-			throws ExecutionException, InterruptedException {
-		mavenSession.setProjects(projects);
-
-		for (TaskSegment taskSegment : taskSegments) {
-			LOGGER.debug("segment");
-			List<Object> tasks = taskSegment.getTasks();
-			for (Object task : tasks) {
-				LOGGER.debug(" task:" + task);
-			}
-			for (MavenProject mavenProject : mavenSession.getProjects()) {
-				if (!simulate) {
-					LOGGER.info("Building project: {}", mavenProject.getId());
-					lifecycleModuleBuilder.buildProject(mavenSession, reactorContext, mavenProject, taskSegment);
-					if (reactorContext.getReactorBuildStatus().isHalted()) {
-						break;
-					}
-				}
-			}
-		}
 	}
 
 	private boolean isBuildRequired(MavenProject project, MavenSession session) {
@@ -199,4 +156,5 @@ public class IncrementalMavenBuilder implements Builder {
 		}
 		return false;
 	}
+
 }
