@@ -41,11 +41,15 @@ public class SingleThreadedIncrementalBuilder extends SingleThreadedBuilder {
 		changedModulesCalculator.printReactor(builderOptions);
 		try {
 			if (!builderOptions.isSimulate()) {
-				SecurityManager originalSecurityManager = System.getSecurityManager();
-				changedModulesCalculator.updateMavenSession(session);
-				super.build(session, reactorContext, changedModulesCalculator.getChangedProjectBuildList(),
-						taskSegments, reactorBuildStatus);
-				IncrementalBuilderUtil.replaceLiferaySecurityManager(originalSecurityManager);
+				ProjectBuildList changedBuildList = changedModulesCalculator.getChangedProjectBuildList();
+				if (changedBuildList.size() != 0) {
+					SecurityManager originalSecurityManager = System.getSecurityManager();
+					changedModulesCalculator.updateMavenSession(session);
+					super.build(session, reactorContext, changedBuildList, taskSegments, reactorBuildStatus);
+					IncrementalBuilderUtil.replaceLiferaySecurityManager(originalSecurityManager);
+				} else {
+					LOGGER.info("Nothing to build");
+				}
 			}
 		} catch (Exception e) {
 			LOGGER.error("Error running the incremental build.", e);
