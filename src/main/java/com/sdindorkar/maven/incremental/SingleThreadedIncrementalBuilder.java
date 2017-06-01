@@ -14,6 +14,12 @@ import org.apache.maven.lifecycle.internal.builder.singlethreaded.SingleThreaded
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Single threaded Incremental Builder implementation.
+ * 
+ * @author sudhanwa
+ * @see {@link BuilderOptions} for options that can be specified.
+ */
 @Singleton
 @Named("incremental")
 public class SingleThreadedIncrementalBuilder extends SingleThreadedBuilder {
@@ -25,7 +31,8 @@ public class SingleThreadedIncrementalBuilder extends SingleThreadedBuilder {
 	}
 
 	/**
-	 * 
+	 * Calculates the list of changed projects and passes them to Maven's single
+	 * threaded builder for building.
 	 * 
 	 * @see org.apache.maven.lifecycle.internal.builder.Builder#build(org.apache.
 	 *      maven.execution.MavenSession,
@@ -40,7 +47,7 @@ public class SingleThreadedIncrementalBuilder extends SingleThreadedBuilder {
 		ChangedModulesCalculator changedModulesCalculator = new ChangedModulesCalculator(session, projectBuilds);
 		changedModulesCalculator.printReactor(builderOptions);
 		try {
-			if (!builderOptions.isSimulate()) {
+			if (!builderOptions.isSkipBuild()) {
 				ProjectBuildList changedBuildList = changedModulesCalculator.getChangedProjectBuildList();
 				if (changedBuildList.size() != 0) {
 					SecurityManager originalSecurityManager = System.getSecurityManager();

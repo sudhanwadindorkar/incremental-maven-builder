@@ -3,9 +3,29 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.github.sudhanwadindorkar</groupId>
 	<artifactId>incremental-maven-builder</artifactId>
-	<version>1.0</version>
-	<name>Maven Incremental Build Extension</name>
-
+	<version>0.1.0</version>
+	<name>Incremental Build Maven Extension</name>
+	<description>An incremental builder for Maven to build only what has changed.</description>
+	<url>https://github.com/sudhanwadindorkar/incremental-maven-builder</url>
+	<licenses>
+		<license>
+			<name>MIT License</name>
+			<url>http://www.opensource.org/licenses/mit-license.php</url>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<id>sudhanwadindorkar</id>
+			<name>Sudhanwa Dindorkar</name>
+			<email>sudhanwa.dindorkar@gmail.com</email>
+			<url>https://github.com/sudhanwadindorkar</url>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:git@github.com:sudhanwadindorkar/incremental-maven-builder.git</connection>
+		<developerConnection>scm:git:git@github.com:sudhanwadindorkar/incremental-maven-builder.git</developerConnection>
+		<url>git@github.com:IDRSolutions/maven-OpenViewerFX-src.git</url>
+	</scm>
 	<properties>
 		<mavenVersion>3.5.0</mavenVersion>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -16,12 +36,6 @@
 			<groupId>org.apache.maven</groupId>
 			<artifactId>maven-core</artifactId>
 			<version>${mavenVersion}</version>
-		</dependency>
-		<!-- https://mvnrepository.com/artifact/org.eclipse.jgit/org.eclipse.jgit -->
-		<dependency>
-			<groupId>org.eclipse.jgit</groupId>
-			<artifactId>org.eclipse.jgit</artifactId>
-			<version>4.8.0.201705170830-rc1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>

@@ -5,26 +5,44 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * The options that can be specified to the incremental builder.
+ * <p>
+ * The following options are currently supported:
+ * <ol>
+ * <li>{@link #PRINT_DETAILED_REACTOR_FLAG}</li>
+ * <li>{@link #SKIP_BUILD_FLAG}</li>
+ * </ol>
+ * 
+ * @author sudhanwa
+ *
+ */
 public class BuilderOptions {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BuilderOptions.class);
 
-	private static final String PRINT_DETAILED_REACTOR_FLAG = "incremental.reactor.detailed";
+	/**
+	 * Option to print detailed reactor information.
+	 */
+	public static final String PRINT_DETAILED_REACTOR_FLAG = "incremental.reactor.detailed";
 
-	private static final String SIMULATE_BUILD_FLAG = "incremental.simulate";
+	/**
+	 * Options to skip the build and just print the reactor information.
+	 */
+	public static final String SKIP_BUILD_FLAG = "incremental.skip.build";
 
-	private boolean simulate;
+	private boolean skipBuild;
 	private boolean printDetailedReactor;
 
 	public BuilderOptions(Properties userProperties) {
-		this.simulate = Boolean.valueOf(userProperties.getProperty(SIMULATE_BUILD_FLAG));
+		this.skipBuild = Boolean.valueOf(userProperties.getProperty(SKIP_BUILD_FLAG));
 		this.printDetailedReactor = Boolean.valueOf(userProperties.getProperty(PRINT_DETAILED_REACTOR_FLAG));
-		LOGGER.debug("{} = {}.", SIMULATE_BUILD_FLAG, this.simulate);
+		LOGGER.debug("{} = {}.", SKIP_BUILD_FLAG, this.skipBuild);
 		LOGGER.debug("{} = {}.", PRINT_DETAILED_REACTOR_FLAG, this.printDetailedReactor);
 	}
 
-	public boolean isSimulate() {
-		return simulate;
+	public boolean isSkipBuild() {
+		return skipBuild;
 	}
 
 	public boolean isPrintDetailedReactor() {

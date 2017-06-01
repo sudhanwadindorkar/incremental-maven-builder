@@ -42,7 +42,7 @@ public class MultiThreadedIncrementalBuilder extends MultiThreadedBuilder {
 		ChangedModulesCalculator changedModulesCalculator = new ChangedModulesCalculator(session, projectBuilds);
 		changedModulesCalculator.printReactor(builderOptions);
 		try {
-			if (!builderOptions.isSimulate()) {
+			if (!builderOptions.isSkipBuild()) {
 				ProjectBuildList changedBuildList = changedModulesCalculator.getChangedProjectBuildList();
 				if (changedBuildList.size() != 0) {
 					SecurityManager originalSecurityManager = System.getSecurityManager();
