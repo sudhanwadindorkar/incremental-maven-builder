@@ -22,9 +22,9 @@
 		</developer>
 	</developers>
 	<scm>
-		<connection>scm:git:git@github.com:sudhanwadindorkar/incremental-maven-builder.git</connection>
+		<connection>scm:git:git://github.com/sudhanwadindorkar/incremental-maven-builder.git</connection>
 		<developerConnection>scm:git:git@github.com:sudhanwadindorkar/incremental-maven-builder.git</developerConnection>
-		<url>git@github.com:IDRSolutions/maven-OpenViewerFX-src.git</url>
+		<url>https://github.com/sudhanwadindorkar/incremental-maven-builder</url>
 	</scm>
 	<properties>
 		<mavenVersion>3.5.0</mavenVersion>

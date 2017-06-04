@@ -37,9 +37,18 @@ public class IncrementalBuilderUtil {
 	 *            The original security manager.
 	 */
 	public static void replaceLiferaySecurityManager(SecurityManager replacement) {
-		String currentSecurityManager = System.getSecurityManager().getClass().getName();
-		if (currentSecurityManager.startsWith(Constants.LIFERAY_MOJO_CLASS)) {
-			System.setSecurityManager(replacement);
+		try {
+			if (System.getSecurityManager() != null) {
+				String currentSecurityManager = System.getSecurityManager().getClass().getName();
+				if (currentSecurityManager.startsWith(Constants.LIFERAY_MOJO_CLASS)) {
+					System.setSecurityManager(replacement);
+				}
+			}
+		} catch (Exception e) {
+			LOGGER.warn("Unexpected exception during clean up. This does not affect the build."
+					+ " Please run with -X to see more details.");
+			LOGGER.warn(e.getMessage());
+			LOGGER.debug("Original exception:", e);
 		}
 	}
 
