@@ -4,10 +4,11 @@ Build only what has changed.
 ## Overview
 
 This is a Maven extension to run incremental builds on a multi-module Maven project. This extension automatically determines the modules that have changed since the last build and builds only the changed modules. It supports both single-threaded and multi-threaded (aka parallel) builds.
-Maven supports building selective projects and their downstream projects using the -pl and -amd flags. This pluging does the same but automatically determines the list of changed projects.
+Maven supports building selective projects and their downstream projects using the -pl and -amd flags. This plugin does the same but automatically determines the list of changed projects.
 
 ## Prerequisites
  * Java 8
+ * Multi-module Maven project
 
 ## Configure the extension
 This extension is not yet published to Maven Central since it is in a POC stage. Hence it will have to be installed manually. Clone this Git repo (or download it) and run "mvn clean install" in this project's directory. This will install the extension to your Maven repository and will be available for other Maven projects to use.
